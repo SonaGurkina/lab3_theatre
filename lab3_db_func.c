@@ -25,6 +25,8 @@ void addItemInDB(DB* db, int scene) {
   if (item == NULL) {
     return;
   }
+
+  memset(item, 0, sizeof(perfomace));
   if (scene) {
     printf("Название спектакля: ");
     if (scanf(" %49[^\n]", item->name) != 1) {
@@ -53,14 +55,8 @@ void addItemInDB(DB* db, int scene) {
     }
   }
 
-  if (db->first == NULL) {
-    item->next = NULL;
-    db->first = item;
-  }
-  else {
-    item->next = db->first;
-    db->first = item;
-  }
+  item->next = db->first;
+  db->first = item;
 }
 
 void deleteItemFromDB(DB* db, char* name) {
@@ -72,14 +68,15 @@ void deleteItemFromDB(DB* db, char* name) {
   perfomace* currItem = db->first;
   perfomace* prevItem = NULL;
 
-  if (strcmp(currItem->name,name)==0 && currItem->next==NULL) {
-    db->first = NULL;
+  if (strcmp(currItem->name, name) == 0) {
+    db->first = currItem->next;
     printf("Удален спектакль: %s\n", currItem->name);
     free(currItem);
     return;
   }
+
   while (currItem != NULL) {
-    if (strcmp(currItem->name,name)==0) {
+    if (strcmp(currItem->name, name) == 0) {
       prevItem->next = currItem->next;
       printf("Удален спектакль: %s\n", currItem->name);
       free(currItem);
@@ -241,13 +238,20 @@ void loadDB(DB* db) {
   char name[50], location[50];
   int cost;
 
+  while (fscanf(file, "%49s %i %49s", name, &cost, location) == 3) {
+    perfomace* item = malloc(sizeof(perfomace));
+    if (item == NULL) {
+      fclose(file);
+      return;
+    }
+    strcpy(item->name, name);
+    item->cost = cost;
+    strcpy(item->location, location);
 
-  while (fscanf(file, "%s %i %s", name, &cost, location) == 3) {
-    addItemInDB(db,0);
-    strcpy(db->first->name, name);
-    db->first->cost = cost;
-    strcpy(db->first->location, location);
+    item->next = db->first;
+    db->first = item;
   }
+
   if (ferror(file)) {
     printf("Ошибка чтения файла");
   }
